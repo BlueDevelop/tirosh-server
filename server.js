@@ -5,6 +5,13 @@ const session = require("express-session");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const errorHandler = require("errorhandler");
+const MongoClient = require("mongodb").MongoClient;
+const assert = require("assert");
+
+// Connection URL
+const url = "mongodb://localhost:27017";
+// Database Name
+const dbName = "icu-dev";
 
 //Configure mongoose's promise to global promise
 mongoose.promise = global.Promise;
@@ -36,14 +43,49 @@ if (!isProduction) {
 
 //Configure Mongoose
 mongoose.connect("mongodb://localhost/tirosh");
+
 //mongoose.set('debug', true);
 
 //Models & routes
 require("./models/Users");
 require("./models/Updates");
+require("./models/Events");
 require("./config/passport");
 app.use(require("./routes"));
 
+app.get("/api/tasks", (req, res) => {
+  const client = new MongoClient(url);
+  client.connect(function(err) {
+    assert.equal(null, err);
+    const db = client.db(dbName);
+    const collection = db.collection("projects");
+    const aggregation_array = [
+      { $match: {} },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assign",
+          foreignField: "_id",
+          as: "assign"
+        }
+      },
+      { $unwind: "$assign" },
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          due: 1,
+          assign: { $concat: ["$assign.name", "  ", "$assign.id"] }
+        }
+      }
+    ];
+    collection.aggregate(aggregation_array).toArray(function(err, docs) {
+      assert.equal(err, null);
+
+      return res.json({ tasks: docs });
+    });
+  });
+});
 //Static file declaration
 app.use(express.static(path.join(__dirname, "client/build")));
 
