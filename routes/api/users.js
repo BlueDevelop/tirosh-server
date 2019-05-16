@@ -61,6 +61,7 @@ router.post("/login", auth.optional, (req, res, next) => {
     "local",
     { session: false },
     (err, passportUser, info) => {
+      console.log(passportUser);
       if (err) {
         return next(err);
       }
@@ -72,7 +73,7 @@ router.post("/login", auth.optional, (req, res, next) => {
         return res.json({ user: user.toAuthJSON() });
       }
 
-      return status(400).info;
+      return res.status(400).info;
     }
   )(req, res, next);
 });

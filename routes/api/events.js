@@ -4,7 +4,7 @@ const auth = require("../auth");
 const Events = mongoose.model("Events");
 
 //POST new update route (required, only authenticated users have access)
-router.post("/", auth.optional, (req, res, next) => {
+router.post("/", auth.required, (req, res, next) => {
   const {
     body: { event }
   } = req;
@@ -26,18 +26,18 @@ router.post("/", auth.optional, (req, res, next) => {
 
   const finalEvent = new Events(event);
 
-  return finalEvent.save().then(() => res.json({ event: "saved" }));
+  return finalEvent.save().then(result => res.json({ event: result }));
 });
 
-//GET allUpdates route (optional, everyone has access)
+//GET allUpdates route (required, everyone has access)
 router.get("/all", auth.optional, (req, res, next) => {
   Events.find().then(events => {
     return res.json({ events: events });
   });
 });
 
-//GET allUpdates route (optional, everyone has access)
-router.delete("/delete/:id", auth.optional, (req, res, next) => {
+//GET allUpdates route (required, everyone has access)
+router.delete("/delete/:id", auth.required, (req, res, next) => {
   const {
     params: { id }
   } = req;
